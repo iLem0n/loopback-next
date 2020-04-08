@@ -1,5 +1,5 @@
 // Copyright IBM Corp. 2020. All Rights Reserved.
-// Node module: @loopback/example-access-control-migration
+// Node module: @loopback/example-passport-login
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
@@ -10,11 +10,13 @@ import {
   Response,
   RestBindings,
   RequestWithSession,
+  HttpErrors,
 } from '@loopback/rest';
 import {UserRepository} from '../repositories';
 import {repository} from '@loopback/repository';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import {authenticate} from '@loopback/authentication';
+import {UserCredentialsRepository} from '../repositories/user-credentials.repository';
 
 export type Credentials = {
   email: string;
@@ -37,13 +39,15 @@ const CredentialsSchema = {
   },
 };
 
-export class UserController {
+export class UserLoginController {
   constructor(
     @repository(UserRepository)
     public userRepository: UserRepository,
+    @repository(UserCredentialsRepository)
+    public userCredentialsRepository: UserCredentialsRepository,
   ) {}
 
-  @post('/users/signup')
+  @post('/signup')
   async signup(
     @requestBody({
       description: 'signup user locally',
@@ -55,11 +59,30 @@ export class UserController {
     credentials: Credentials,
     @inject(RestBindings.Http.RESPONSE) response: Response,
   ) {
-    await this.userRepository.create({
-      email: credentials.email,
-      username: credentials.email,
-      name: credentials.name,
-    });
+    let userCredentials;
+    try {
+      userCredentials = await this.userCredentialsRepository.findById(
+        credentials.email,
+      );
+    } catch (err) {
+      if (err.code !== 'ENTITY_NOT_FOUND') {
+        throw err;
+      }
+    }
+    if (!userCredentials) {
+      const user = await this.userRepository.create({
+        email: credentials.email,
+        username: credentials.email,
+        name: credentials.name,
+      });
+      userCredentials = await this.userCredentialsRepository.create({
+        id: credentials.email,
+        password: credentials.password,
+        userId: user.id,
+      });
+    } else {
+      throw new HttpErrors.NotAcceptable('User already registered');
+    }
     response.redirect('/login');
     return response;
   }

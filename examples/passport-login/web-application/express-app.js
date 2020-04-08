@@ -124,8 +124,8 @@ app.get('/signup', function (req, res, next) {
 /**
  * submit signup request
  */
-app.post('/signup', urlencodedParser, function (req, res, next) {
-  req.url = '/api/users/signup';
+app.post('/users/signup', urlencodedParser, function (req, res, next) {
+  req.url = '/api/signup';
   req.headers['accept'] = 'text/json';
   req.app.handle(req, res, next);
 });

@@ -80,6 +80,8 @@ const users = [
   {
     id: 1001,
     username: 'user1',
+    firstName: 'tinker',
+    lastName: 'bell',
     password: 'abc',
     email: 'usr1@lb.com',
     signingKey: 'AZeb==',
@@ -87,9 +89,20 @@ const users = [
   {
     id: 1002,
     username: 'user2',
+    firstName: 'rosetta',
+    lastName: 'fawn',
     password: 'xyz',
     email: 'usr2@lb2.com',
     signingKey: 'BuIx=+',
+  },
+  {
+    id: 1003,
+    username: 'testuser',
+    firstName: 'vidia',
+    lastName: 'zarina',
+    password: 'xyz',
+    email: 'test@example.com',
+    signingKey: 'HuYa=+',
   },
 ];
 
@@ -122,10 +135,11 @@ async function createJwt(
   const jti = Math.floor(Math.random() * Math.floor(1000));
   const token = await jwt.sign(
     {
+      userId: user.id,
       jti: jti,
       sub: user.id,
-      name: user.username,
-      email: user.email,
+      name: '' + user.firstName + user.lastName,
+      email: {value: user.email},
       iss: 'sample oauth provider',
       exp: Math.floor(Date.now() / 1000) + 5 * 1000,
       iat: Math.floor(Date.now() / 1000),
